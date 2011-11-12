@@ -182,19 +182,30 @@ class Kohana_Database_MySQL extends Database {
 			$this->_select_db($this->_config['connection']['database']);
 		}
 
-		// Execute the query
-		if (($result = mysql_query($sql, $this->_connection)) === FALSE)
-		{
-			if (isset($benchmark))
-			{
-				// This benchmark is worthless
-				Profiler::delete($benchmark);
-			}
-
-			throw new Database_Exception(':error [ :query ]',
+        /**
+         * Execute the query
+         * 
+         * If mysql.trace_mode directive is enabled in php.ini, mysql_query may
+         * throw a warning that will be converted to ErrorException by Kohana::error_handler()
+         */
+        try
+        {
+            if (($result = mysql_query($sql, $this->_connection)) === FALSE)
+            {
+                throw new ErrorException;
+            }
+        }
+        catch (ErrorException $e)
+        {
+            if (isset($benchmark))
+            {
+    			// This benchmark is worthless
+                Profiler::delete($benchmark);
+            }
+            throw new Database_Exception(':error [ :query ]',
 				array(':error' => mysql_error($this->_connection), ':query' => $sql),
 				mysql_errno($this->_connection));
-		}
+        }
 
 		if (isset($benchmark))
 		{
